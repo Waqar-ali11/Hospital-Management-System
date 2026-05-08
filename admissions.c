@@ -280,6 +280,10 @@ void* scheduler_thread(void* arg) {
         report_memory_stats(p->care_units);
         pthread_mutex_unlock(&mem_mutex);
 
+        fprintf(schedule_log, "[Time: %ld] Admitted Patient %d (Pri: %d) to Index %d for %d units.\n",
+                time(NULL), p->id, p->priority, target_idx, p->care_units);
+        fflush(schedule_log); // Ensure it writes immediately
+
         char log_str[128];
         sprintf(log_str, "Admitted Patient %d (Pri: %d). Required Units: %d. Start Index: %d", p->id, p->priority, p->care_units, target_idx);
         write_mmap_log(log_str);	// write to mmap file
@@ -384,10 +388,22 @@ int main(int argc, char* argv[]) {
     ftruncate(mmap_fd, MMAP_SIZE); 
     mmap_region = mmap(NULL, MMAP_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, mmap_fd, 0);
 
-    sem_init(&sem_icu, 0, 4); sem_init(&sem_iso, 0, 4); sem_init(&sem_queue_limit, 0, MAX_QUEUE_SIZE); 
+    sem_init(&sem_icu, 0, 4); sem_init(&sem_iso, 0, 4); sem_init(&sem_queue_limit, 0, MAX_QUEUE_SIZE);
     mkfifo("/tmp/triage_fifo", 0666); mkfifo("/tmp/discharge_fifo", 0666);	// setup posix fifos
 
+    schedule_log = fopen("schedule_log.txt", "w"); // Open schedule_log.txt
+    if (schedule_log == NULL) {
+        perror("Failed to open schedule_log.txt");
+        exit(1);
+    }
+    fprintf(schedule_log, "--- Patient Scheduling Log (Algo: %s) ---\n",
+            (current_algo == FCFS) ? "FCFS" : "PRIORITY");
+
     mem_log = fopen("memory_log.txt", "w");	// initialize fragmentation log
+    if (mem_log == NULL) { // Good practice to check this too
+        perror("Failed to open memory_log.txt");
+        exit(1);
+    }
     fprintf(mem_log, "--- Memory Fragmentation Log (Strategy: %d) ---\n", current_strategy);
 
     pthread_t t_rec, t_sch, t_dis, t_nurse;	// declare system threads
@@ -400,8 +416,8 @@ int main(int argc, char* argv[]) {
     pthread_join(t_rec, NULL); pthread_join(t_sch, NULL);	// clean up threads safely
     pthread_join(t_dis, NULL); pthread_join(t_nurse, NULL);
 
+    fclose(schedule_log);
     fclose(mem_log);
-    msync(mmap_region, MMAP_SIZE, MS_SYNC);	// flush virtual memory changes to disk
     munmap(mmap_region, MMAP_SIZE);	// clean up mmap mapping
     close(mmap_fd);
 
