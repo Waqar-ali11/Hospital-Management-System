@@ -49,3 +49,7 @@ fi
 
 patient_record="$patient_name, $patient_age, $patient_severity, $triage_priority"
 echo "Triage Complete = $patient_record"
+
+if [ -p /tmp/triage_fifo ]; then     # changes for phase 2 : Pipe it directly to the Admissions Process
+    echo "Triage Complete = $patient_record" > /tmp/triage_fifo
+fi
