@@ -4,7 +4,7 @@
 #include <time.h>
 #include <errno.h>	// for system error reporting codes
 #include <unistd.h>	// for process creation (fork, execv)
-#include <signal.h	// for signal handling (sigaction, signal, SIGCHLD, SIGTERM)
+#include <signal.h>	// for signal handling (sigaction, signal, SIGCHLD, SIGTERM)
 #include <sys/wait.h>
 #include <sys/ipc.h>	// for System V IPC key generation (ftok) used to identify the shared memory segment
 #include <sys/shm.h>	// for System V Shared Memory operations (shmget, shmat, shmdt, shmctl) to manage the bed bitmap
