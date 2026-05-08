@@ -20,11 +20,13 @@ echo "   STARTING HOSPITAL ADMISSIONS MANAGER"
 echo "    WARDS CAPACITY = 10 BEDS AVAILABLE"
 echo "------------------------------------------"
 
-# Run process in background & is used for this purpose
+# run process in background & is used for this purpose
 # $! is for giving the variable latest PID run on previous command
-./admissions &
+ALGO=${1:-PRIORITY}     # accept scheduling algorithm from command line, default to PRIORITY
+./admissions $ALGO &
 admissions_PID=$!
 
 # printing the PID of process into text file for later use
 echo $admissions_PID > admissions_PID.txt
 echo "Admissions manager launched successfully in background"
+echo "PID : $admissions_PID"
